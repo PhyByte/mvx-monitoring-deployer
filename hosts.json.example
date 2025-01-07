@@ -1,0 +1,7 @@
+[
+    ["Admin-Station", "0.0.0.0", "infrastructure"],
+    ["Proxy", "1.1.1.1", "infrastructure"],
+    ["Mainnet-Validator-A", "2.2.2.2", "mx-node"],
+    ["Mainnet-Validator-B", "3.3.3.3", "mx-node"],
+    ["Web-Apps", "4.4.4.4", "Apps"]
+  ]
