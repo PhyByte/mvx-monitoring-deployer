@@ -21,5 +21,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     restart: always
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    network_mode: "host"  # Important for host-level metrics
+    restart: always
+
 volumes:
   grafana_data:
