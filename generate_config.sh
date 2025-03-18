@@ -2,6 +2,8 @@
 
 # Paths for configuration files
 PROMETHEUS_CONFIG_FILE="./prometheus/prometheus.yml"
+ALERTMANAGER_CONFIG_FILE="./alertmanager/alertmanager.yml"
+ALERT_RULES_FILE="./prometheus/alert.rules.yml"
 HOSTS_FILE="hosts.json"
 GRAFANA_INI_PATH="grafana/provisioning/grafana.ini"
 CONFIG_CFG_FILE="config.cfg"
@@ -46,10 +48,81 @@ configure_prometheus() {
     done
   done
 
+  # Add alerting configuration
+  echo "" >> $PROMETHEUS_CONFIG_FILE
+  echo "rule_files:" >> $PROMETHEUS_CONFIG_FILE
+  echo "  - /etc/prometheus/alert.rules.yml" >> $PROMETHEUS_CONFIG_FILE
+  echo "" >> $PROMETHEUS_CONFIG_FILE
+  echo "alerting:" >> $PROMETHEUS_CONFIG_FILE
+  echo "  alertmanagers:" >> $PROMETHEUS_CONFIG_FILE
+  echo "    - static_configs:" >> $PROMETHEUS_CONFIG_FILE
+  echo "        - targets: ['alertmanager:9093']" >> $PROMETHEUS_CONFIG_FILE
+
   # Clean up the temporary file
   rm "$TEMP_FILE"
 
   echo "Prometheus configuration file generated: $PROMETHEUS_CONFIG_FILE"
+}
+
+# Function to configure Alertmanager
+configure_alertmanager() {
+  # Check if config.cfg exists
+  if [ ! -f "$CONFIG_CFG_FILE" ]; then
+    echo "Error: $CONFIG_CFG_FILE not found."
+    exit 1
+  fi
+
+  # Source the config file to load environment variables
+  source "$CONFIG_CFG_FILE"
+
+  # Generate alertmanager.yml dynamically
+  cat <<EOF > "$ALERTMANAGER_CONFIG_FILE"
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'telegram'
+
+receivers:
+- name: 'telegram'
+  telegram_configs:
+  - bot_token: '$TELEGRAM_BOT_TOKEN'
+    chat_id: $TELEGRAM_CHAT_ID
+    api_url: 'https://api.telegram.org'
+    parse_mode: 'Markdown'
+
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'instance']
+EOF
+
+  echo "Alertmanager configuration file generated: $ALERTMANAGER_CONFIG_FILE"
+}
+
+# Function to configure alert rules
+configure_alert_rules() {
+  cat <<EOF > "$ALERT_RULES_FILE"
+groups:
+- name: example
+  rules:
+  - alert: InstanceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ \$labels.instance }} down"
+      description: "{{ \$labels.instance }} of job {{ \$labels.job }} has been down for more than 1 minute."
+EOF
+
+  echo "Alert rules file generated: $ALERT_RULES_FILE"
 }
 
 # Function to configure Grafana
@@ -90,6 +163,12 @@ EOF
 # Main script execution
 echo "Configuring Prometheus..."
 configure_prometheus
+
+echo "Configuring Alertmanager..."
+configure_alertmanager
+
+echo "Configuring Alert Rules..."
+configure_alert_rules
 
 echo "Configuring Grafana..."
 configure_grafana

@@ -10,3 +10,11 @@ scrape_configs:
   - job_name: 'node'
     static_configs:
       - targets: ['node-exporter:9100']
+
+rule_files:
+  - /etc/prometheus/alert.rules.yml  # Reference the alert rules file
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']  # Point to Alertmanager

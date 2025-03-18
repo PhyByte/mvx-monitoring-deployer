@@ -1,6 +1,6 @@
 volumes:
   grafana_data:
-  
+
 services:
   node-exporter:
     image: prom/node-exporter:latest
@@ -17,9 +17,22 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml  # Add alert rules file
     ports:
       - "9090:9090"
     restart: always
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    restart: always
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
