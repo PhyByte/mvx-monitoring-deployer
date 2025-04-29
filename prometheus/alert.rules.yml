@@ -1,0 +1,52 @@
+groups:
+- name: system_monitoring
+  rules:
+  # Instance Down Alert (existing)
+  - alert: InstanceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} is down"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} has been unreachable for more than 1 minute."
+
+  # High CPU Usage Alert
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has CPU usage above 90% for more than 5 minutes (current: {{ $value | printf \"%.2f\" }}%)."
+
+  # High RAM Usage Alert
+  - alert: HighRAMUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High RAM usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has RAM usage above 90% for more than 5 minutes (current: {{ $value | printf \"%.2f\" }}%)."
+
+  # High Disk Usage Alert
+  - alert: HighDiskUsage
+    expr: 100 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} * 100) > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High disk usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has disk usage above 90% on / for more than 5 minutes (current: {{ $value | printf \"%.2f\" }}%)."
+
+  # High Swap Usage Alert
+  - alert: HighSwapUsage
+    expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / node_memory_SwapTotal_bytes * 100 > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High swap usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has swap usage above 90% for more than 5 minutes (current: {{ $value | printf \"%.2f\" }}%)."

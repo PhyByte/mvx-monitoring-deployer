@@ -1,0 +1,24 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'telegram'
+
+receivers:
+- name: 'telegram'
+  telegram_configs:
+  - bot_token: 'YOUR_BOT_TOKEN'
+    chat_id: 'YOUR_CHAT_ID'
+    api_url: 'https://api.telegram.org'
+    parse_mode: 'Markdown'       # Optional: Use Markdown or HTML for formatting
+
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'instance']
